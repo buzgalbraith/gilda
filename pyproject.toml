@@ -46,6 +46,8 @@ terms = [
 ]
 benchmarks = [
     "pandas>=1.0",
+    "indra",
+    'famplex',
     "requests",
     "tabulate",
     "tqdm",

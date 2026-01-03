@@ -17,7 +17,6 @@ import tabulate
 from lxml import etree
 from tqdm import tqdm
 
-import famplex
 from gilda import __version__
 from gilda.grounder import Grounder, logger
 from gilda.resources import mesh_to_taxonomy, popular_organisms
@@ -217,6 +216,11 @@ class BioIDBenchmarker:
             inner_path='BioIDtraining_2/annotations.csv',
             read_csv_kwargs=dict(sep=',', low_memory=False),
         )
+        ## this can be changed when we have
+        df = pd.read_csv(
+            '/Users/buzgalbraith/.data/BioIDtraining_2/annotations.csv',
+            sep=',', low_memory=False
+        )
         # Split entries with multiple groundings then normalize ids
         df.loc[:, 'obj'] = df['obj'].apply(self._normalize_ids)
         # Add synonyms of gold standard groundings to help match more things
@@ -298,8 +302,9 @@ class BioIDBenchmarker:
         :
             Plaintext of specified article
         """
-        directory = MODULE.ensure_untar(url=URL, directory='BioIDtraining_2')
-        path = directory.joinpath('BioIDtraining_2', 'fulltext_bioc',
+        # directory = MODULE.ensure_untar(url=URL, directory='BioIDtraining_2')
+        directory = pathlib.Path('/Users/buzgalbraith/.data/BioIDtraining_2/')
+        path = directory.joinpath('fulltext_bioc',
                                   f'{don_article}.xml')
         tree = etree.parse(path.as_posix())
         paragraphs = tree.xpath('//text')
@@ -446,6 +451,7 @@ class BioIDBenchmarker:
             former isa the later.
         """
         # TODO can this be swapped directly for the bioontology?
+        import famplex ## moved import inward to prevent importing before resources are coppied with `get_famplex_resources()` 
         return famplex.isa('HGNC', hgnc_id, 'FPLX', fplx_id)
 
     def isa(self, curie_1: str, curie_2: str) -> bool:
@@ -617,7 +623,8 @@ class BioIDBenchmarker:
         total.loc[:, 'entity_type'] = 'Total'
         stats = res_df.groupby('entity_type', as_index=False).sum()
         stats = stats[stats['entity_type'] != 'unknown']
-        stats = stats.append(total, ignore_index=True)
+        # stats = stats.append(total, ignore_index=True)
+        
         stats.loc[:, stats.columns[1:]] = stats[stats.columns[1:]].astype(int)
         if match == 'strict':
             score_cols = ['top_correct', 'exists_correct']
@@ -720,10 +727,22 @@ nmspace_displaynames = {
     'CVCL': 'Cellosaurus', 'UBERON': 'Uberon',
     'FPLX': 'Famplex'
 }
-
-
+def get_famplex_resources():
+    """This version of Famplex expects a set of resources in famplex/resources and doing a low touch fix of copying them from indra/resources/famplex"""
+    import indra
+    import shutil
+    import os
+    import importlib.util
+    source = os.path.join(indra.__path__[0],'resources' , 'famplex')
+    dest_parent = os.path.dirname(importlib.util.find_spec('famplex').origin)
+    dest = os.path.join(dest_parent, 'resources')
+    if not os.path.exists(dest):
+        os.makedirs(dest_parent, exist_ok=True)
+        shutil.copytree(source, dest)
+get_famplex_resources() ## workaround to get resources for fampelx
 def get_famplex_members():
     from indra.databases import hgnc_client
+    import famplex
     fplx_entities = famplex.load_entities()
     fplx_children = defaultdict(set)
     for fplx_entity in fplx_entities:
@@ -734,7 +753,6 @@ def get_famplex_members():
                 if db_id:
                     fplx_children[fplx_entity].add('%s:%s' % (db_ns, db_id))
     return dict(fplx_children)
-
 
 fplx_members = get_famplex_members()
 
