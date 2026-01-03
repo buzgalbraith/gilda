@@ -31,7 +31,7 @@ logger.setLevel('WARNING')
 HERE = os.path.dirname(os.path.abspath(__file__))
 TAXONOMY_CACHE_PATH = os.path.join(HERE, 'taxonomy_cache.json')
 MODULE = pystow.module('gilda', 'biocreative')
-URL = 'https://biocreative.bioinformatics.udel.edu/media/store/files/2017/BioIDtraining_2.tar.gz'
+URL = 'https://github.com/buzgalbraith/BioCreative-VI-Track-1/raw/refs/heads/main/data/BioIDtraining_2.tar.gz' # used to be ('https://biocreative.bioinformatics.udel.edu/media/store/files/2017/BioIDtraining_2.tar.gz')
 
 tqdm.pandas()
 
@@ -216,11 +216,6 @@ class BioIDBenchmarker:
             inner_path='BioIDtraining_2/annotations.csv',
             read_csv_kwargs=dict(sep=',', low_memory=False),
         )
-        ## this can be changed when we have
-        df = pd.read_csv(
-            '/Users/buzgalbraith/.data/BioIDtraining_2/annotations.csv',
-            sep=',', low_memory=False
-        )
         # Split entries with multiple groundings then normalize ids
         df.loc[:, 'obj'] = df['obj'].apply(self._normalize_ids)
         # Add synonyms of gold standard groundings to help match more things
@@ -302,9 +297,8 @@ class BioIDBenchmarker:
         :
             Plaintext of specified article
         """
-        # directory = MODULE.ensure_untar(url=URL, directory='BioIDtraining_2')
-        directory = pathlib.Path('/Users/buzgalbraith/.data/BioIDtraining_2/')
-        path = directory.joinpath('fulltext_bioc',
+        directory = MODULE.ensure_untar(url=URL, directory='BioIDtraining_2')
+        path = directory.joinpath('BioIDtraining_2', 'fulltext_bioc',
                                   f'{don_article}.xml')
         tree = etree.parse(path.as_posix())
         paragraphs = tree.xpath('//text')
