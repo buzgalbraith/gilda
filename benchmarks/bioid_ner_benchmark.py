@@ -24,14 +24,10 @@ logger = logging.getLogger('bioid_ner_benchmark')
 # Constants
 HERE = os.path.dirname(os.path.abspath(__file__))
 
-DATA_DIR = os.path.join(HERE, 'data', 'BioIDtraining_2', 'caption_bioc')
-ANNOTATIONS_PATH = os.path.join(HERE, 'data', 'BioIDtraining_2',
-                                'annotations.csv')
 RESULTS_DIR = os.path.join(HERE, 'results', "bioid_ner_performance",
                            gilda.__version__)
 MODULE = pystow.module('gilda', 'biocreative')
-URL = ('https://biocreative.bioinformatics.udel.edu/media/store/files/2017'
-       '/BioIDtraining_2.tar.gz')
+URL = 'https://github.com/buzgalbraith/BioCreative-VI-Track-1/raw/refs/heads/main/data/BioIDtraining_2.tar.gz' # used to be ('https://biocreative.bioinformatics.udel.edu/media/store/files/2017/BioIDtraining_2.tar.gz')
 
 tqdm.pandas()
 
@@ -57,9 +53,11 @@ class BioIDNERBenchmarker(BioIDBenchmarker):
         print("Extracting information from XML files...")
         data = []
         total_annotations = 0
-        for filename in os.listdir(DATA_DIR):
-            if filename.endswith('.xml'):
-                filepath = os.path.join(DATA_DIR, filename)
+        directory = MODULE.ensure_untar(url=URL, directory='BioIDtraining_2')
+        data_dir = directory.joinpath('BioIDtraining_2', 'caption_bioc')
+        for filename in os.listdir(data_dir):
+            if filename.endswith('.xml') and not filename.startswith('._'): ## added additional check to skip hidden files
+                filepath = os.path.join(data_dir, filename)
                 tree = ET.parse(filepath)
                 root = tree.getroot()
                 for document in root.findall('.//document'):
